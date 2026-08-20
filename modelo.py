@@ -47,9 +47,9 @@ def funcion_sucesora(estado):
             sucesores.append((nombre, nuevo, 1))
     return sucesores
 
-def test_objetivo(estado):
+def test_objetivo(estado, objetivo=OBJETIVO):
     """Prueba si el estado actual corresponde a la meta final."""
-    return estado == OBJETIVO
+    return estado == objetivo
 
 
 class Nodo:
@@ -83,6 +83,39 @@ class Nodo:
             nodo = nodo.padre
         accs.reverse()
         return accs
+
+    def en_ancestros(self, estado):
+        """Verifica si un estado ya existe en la cadena de ancestros de la rama actual (Tree Search puro)."""
+        nodo = self
+        while nodo is not None:
+            if nodo.estado == estado:
+                return True
+            nodo = nodo.padre
+        return False
+
+    def to_dict(self, max_nodes=500, node_counter=None):
+        """Convierte el nodo y su subárbol a un diccionario serializable para la GUI."""
+        if node_counter is None:
+            node_counter = [0]
+        
+        if node_counter[0] >= max_nodes:
+            return None
+
+        node_counter[0] += 1
+        
+        hijos_serializados = []
+        for hijo in self.hijos:
+            hijo_dict = hijo.to_dict(max_nodes, node_counter)
+            if hijo_dict is not None:
+                hijos_serializados.append(hijo_dict)
+
+        return {
+            "estado": list(self.estado),
+            "accion": self.accion,
+            "costo": self.costo,
+            "nivel": self.nivel,
+            "hijos": hijos_serializados
+        }
 
     def __repr__(self):
         return f"Nodo(estado={self.estado}, nivel={self.nivel}, costo={self.costo})"

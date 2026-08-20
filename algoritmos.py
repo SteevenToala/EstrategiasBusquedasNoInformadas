@@ -53,19 +53,19 @@ def _empaquetar_resultado(nombre, estructura, comp_tiempo_t, comp_espacio_t,
     }
 
 
-def bfs(estado_inicial):
+def bfs(estado_inicial, objetivo=OBJETIVO):
     """Búsqueda en Anchura (Breadth-First Search) - Usa Cola FIFO."""
     inicio_t = time.perf_counter()
     raiz = Nodo(estado_inicial)
 
-    if test_objetivo(estado_inicial):
+    if test_objetivo(estado_inicial, objetivo):
         return _empaquetar_resultado(
             "BFS", "Cola FIFO (deque)", "O(b^d)", "O(b^d)",
             raiz, 1, 0, 1, inicio_t, raiz
         )
 
     frontera = deque([raiz])          # COLA FIFO
-    visitados = {estado_inicial}      # Control de estados visitados
+    visitados = {estado_inicial}
     nodos_generados = 1
     nodos_expandidos = 0
     max_frontera = 1
@@ -83,7 +83,7 @@ def bfs(estado_inicial):
                 nodo.agregar_hijo(hijo)
                 nodos_generados += 1
 
-                if test_objetivo(estado):
+                if test_objetivo(estado, objetivo):
                     return _empaquetar_resultado(
                         "BFS", "Cola FIFO (deque)", "O(b^d)", "O(b^d)",
                         hijo, nodos_generados, nodos_expandidos, max_frontera, inicio_t, raiz
@@ -96,12 +96,12 @@ def bfs(estado_inicial):
     )
 
 
-def dfs(estado_inicial):
+def dfs(estado_inicial, objetivo=OBJETIVO):
     """Búsqueda en Profundidad (Depth-First Search) - Usa Pila LIFO."""
     inicio_t = time.perf_counter()
     raiz = Nodo(estado_inicial)
 
-    if test_objetivo(estado_inicial):
+    if test_objetivo(estado_inicial, objetivo):
         return _empaquetar_resultado(
             "DFS", "Pila LIFO (list)", "O(b^m)", "O(b*m)",
             raiz, 1, 0, 1, inicio_t, raiz
@@ -126,7 +126,7 @@ def dfs(estado_inicial):
                 nodo.agregar_hijo(hijo)
                 nodos_generados += 1
 
-                if test_objetivo(estado):
+                if test_objetivo(estado, objetivo):
                     return _empaquetar_resultado(
                         "DFS", "Pila LIFO (list)", "O(b^m)", "O(b*m)",
                         hijo, nodos_generados, nodos_expandidos, max_pila, inicio_t, raiz
@@ -139,12 +139,12 @@ def dfs(estado_inicial):
     )
 
 
-def dfs_iterativa(estado_inicial):
+def dfs_iterativa(estado_inicial, objetivo=OBJETIVO):
     """Búsqueda en Profundidad Iterativa (IDDFS) - Pila con Límite Progresivo."""
     inicio_t = time.perf_counter()
     raiz_principal = Nodo(estado_inicial)
 
-    if test_objetivo(estado_inicial):
+    if test_objetivo(estado_inicial, objetivo):
         return _empaquetar_resultado(
             "DFS iterativa", "Pila LIFO + Limite", "O(b^d)", "O(b*d)",
             raiz_principal, 1, 0, 1, inicio_t, raiz_principal
@@ -178,7 +178,7 @@ def dfs_iterativa(estado_inicial):
                         nodo.agregar_hijo(hijo)
                         nodos_generados += 1
 
-                        if test_objetivo(estado):
+                        if test_objetivo(estado, objetivo):
                             total_generados += nodos_generados
                             global_max_pila = max(global_max_pila, max_pila)
                             return _empaquetar_resultado(
@@ -220,11 +220,11 @@ def _expandir_un_paso_bidireccional(frontera_propia, visitados_propios, visitado
     return None, None, generados
 
 
-def bidireccional(estado_inicial):
+def bidireccional(estado_inicial, objetivo=OBJETIVO):
     """Búsqueda Bidireccional - 2 Colas FIFO simultáneas (Inicio <-> Meta)."""
     inicio_t = time.perf_counter()
 
-    if estado_inicial == OBJETIVO:
+    if test_objetivo(estado_inicial, objetivo):
         raiz = Nodo(estado_inicial)
         return _empaquetar_resultado(
             "Bidireccional", "2 Colas + 2 Dicts", "O(b^(d/2))", "O(b^(d/2))",
@@ -232,12 +232,12 @@ def bidireccional(estado_inicial):
         )
 
     raiz_ini = Nodo(estado_inicial)
-    raiz_obj = Nodo(OBJETIVO)
+    raiz_obj = Nodo(objetivo)
 
     frontera_ini = deque([raiz_ini])
     frontera_obj = deque([raiz_obj])
     visitados_ini = {estado_inicial: raiz_ini}
-    visitados_obj = {OBJETIVO: raiz_obj}
+    visitados_obj = {objetivo: raiz_obj}
 
     nodos_generados = 2
     nodos_expandidos = 0
@@ -292,14 +292,19 @@ def bidireccional(estado_inicial):
     )
 
 
-def ejecutar_comparacion(semilla=None):
-    """Ejecuta los 4 algoritmos sobre el mismo punto de inicio."""
-    estado_inicial = generar_estado_inicial(semilla)
+def ejecutar_comparacion(estado_inicial=None, objetivo=OBJETIVO, semilla=None):
+    """Ejecuta los 4 algoritmos sobre el mismo punto de inicio y objetivo."""
+    if estado_inicial is None:
+        estado_inicial = generar_estado_inicial(semilla)
+    
+    estado_inicial = tuple(estado_inicial)
+    objetivo = tuple(objetivo)
+
     resultados = [
-        bfs(estado_inicial),
-        dfs(estado_inicial),
-        dfs_iterativa(estado_inicial),
-        bidireccional(estado_inicial),
+        bfs(estado_inicial, objetivo),
+        dfs(estado_inicial, objetivo),
+        dfs_iterativa(estado_inicial, objetivo),
+        bidireccional(estado_inicial, objetivo),
     ]
     return estado_inicial, resultados
 
