@@ -4,7 +4,7 @@ import math
 import random
 
 from modelo import ANCHO, LARGO, OBJETIVO, generar_estado_inicial
-from algoritmos import ejecutar_comparacion, mejor_solucion, bfs, dfs, dfs_iterativa, bidireccional
+from algoritmos import ejecutar_comparacion, mejor_solucion
 
 # ==============================================================================
 # APLICACIÓN DE ESCRITORIO NATIVA (TKINTER GUI) - BÚSQUEDAS NO INFORMADAS
@@ -14,8 +14,8 @@ class BusquedasGUI(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Sistema de Búsquedas No Informadas — Aula 20x10 (IA)")
-        self.geometry("1380x860")
-        self.minsize(1100, 700)
+        self.geometry("1400x900")
+        self.minsize(1100, 720)
         
         # Paleta de Colores Moderna (Dark Mode)
         self.COLOR_BG = "#0f172a"
@@ -61,7 +61,6 @@ class BusquedasGUI(tk.Tk):
         self.style = ttk.Style()
         self.style.theme_use("clam")
 
-        # Configuración general de ttk
         self.style.configure(".", background=self.COLOR_PANEL, foreground=self.COLOR_TEXT, font=("Segoe UI", 9))
         self.style.configure("TFrame", background=self.COLOR_PANEL)
         self.style.configure("Main.TFrame", background=self.COLOR_BG)
@@ -93,7 +92,7 @@ class BusquedasGUI(tk.Tk):
         title_lbl = tk.Label(header_frame, text="🤖 Búsquedas No Informadas (IA)", font=("Segoe UI", 14, "bold"), bg=self.COLOR_PANEL, fg=self.COLOR_TEXT)
         title_lbl.pack(side=tk.LEFT, padx=18, pady=8)
 
-        self.lbl_coords = tk.Label(header_frame, text="Inicio: (3, 0)  |  Objetivo: (11, 8)", font=("Consolas", 11, "bold"), bg=self.COLOR_CELL_BG, fg=self.COLOR_PATH, padx=12, pady=4, relief=tk.SOLID, bd=1)
+        self.lbl_coords = tk.Label(header_frame, text="Inicio: (6, 1)  |  Objetivo: (11, 8)", font=("Consolas", 11, "bold"), bg=self.COLOR_CELL_BG, fg=self.COLOR_PATH, padx=12, pady=4, relief=tk.SOLID, bd=1)
         self.lbl_coords.pack(side=tk.LEFT, padx=20)
 
         btn_random = ttk.Button(header_frame, text="🎲 Origen Aleatorio", style="Secondary.TButton", command=self.on_random_start)
@@ -102,21 +101,49 @@ class BusquedasGUI(tk.Tk):
         btn_solve = ttk.Button(header_frame, text="⚡ Resolver Todo", style="Primary.TButton", command=self.resolver_todo)
         btn_solve.pack(side=tk.RIGHT, padx=8, pady=8)
 
-        # 2. CUERPO PRINCIPAL DIVIDIDO (Izquierda: Grid y Métricas, Derecha: Árbol y Tablas)
+        # 2. PANEL INFERIOR: Tabla de Métricas y Complejidad (EMPAQUETADO CON side=BOTTOM PARA GARANTIZAR ESPACIO COMPLETO)
+        bottom_frame = ttk.LabelFrame(self, text=" 📊 Tabla Comparativa de Complejidades y Métricas Experimentales ")
+        bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=(4, 10))
+
+        columnas = ("algoritmo", "estructura", "solucion", "costo", "nivel", "generados", "expandidos", "memoria", "tiempo", "comp_t", "comp_e")
+        self.tree_table = ttk.Treeview(bottom_frame, columns=columnas, show="headings", height=5)
+        
+        headers = [
+            ("algoritmo", "Algoritmo", 120),
+            ("estructura", "Estructura de Datos", 140),
+            ("solucion", "Solución", 70),
+            ("costo", "Costo", 55),
+            ("nivel", "Nivel", 55),
+            ("generados", "Generados", 85),
+            ("expandidos", "Expandidos", 85),
+            ("memoria", "Máx. Memoria", 95),
+            ("tiempo", "Tiempo (s)", 90),
+            ("comp_t", "Tiempo Teórico", 100),
+            ("comp_e", "Espacio Teórico", 100)
+        ]
+
+        for col, title, w in headers:
+            self.tree_table.heading(col, text=title)
+            self.tree_table.column(col, width=w, minwidth=50, stretch=True, anchor=tk.CENTER)
+
+        self.tree_table.pack(fill=tk.BOTH, expand=True, padx=6, pady=6)
+
+        # 3. CUERPO PRINCIPAL DIVIDIDO (CENTRAL)
         main_paned = ttk.Panedwindow(self, orient=tk.HORIZONTAL)
-        main_paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        main_paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=(4, 6))
 
         # PANEL IZQUIERDO: Cuadrícula y Controles
-        left_frame = tk.Frame(main_paned, bg=self.COLOR_PANEL, width=440)
+        left_frame = tk.Frame(main_paned, bg=self.COLOR_PANEL, width=420)
         main_paned.add(left_frame, weight=0)
 
         # Canvas Cuadrícula 20x10
         grid_labelframe = ttk.LabelFrame(left_frame, text=" 📍 Espacio del Aula (20x10) — Clic para mover Inicio (I) ")
         grid_labelframe.pack(fill=tk.BOTH, expand=True, padx=8, pady=6)
 
-        self.canvas_grid = tk.Canvas(grid_labelframe, bg=self.COLOR_CELL_BG, highlightthickness=0, width=380, height=480)
+        self.canvas_grid = tk.Canvas(grid_labelframe, bg=self.COLOR_CELL_BG, highlightthickness=0, width=380, height=440)
         self.canvas_grid.pack(fill=tk.BOTH, expand=True, padx=6, pady=6)
         self.canvas_grid.bind("<Button-1>", self.on_grid_click)
+        self.canvas_grid.bind("<Configure>", lambda e: self.dibujar_cuadricula())
 
         # Barra de Controles de Animación
         anim_bar = tk.Frame(left_frame, bg=self.COLOR_PANEL)
@@ -167,15 +194,34 @@ class BusquedasGUI(tk.Tk):
         tree_ctrl_frame = tk.Frame(right_frame, bg=self.COLOR_PANEL)
         tree_ctrl_frame.pack(fill=tk.X, padx=4, pady=4)
 
-        tk.Label(tree_ctrl_frame, text="Modo de Árbol:", font=("Segoe UI", 9, "bold"), bg=self.COLOR_PANEL, fg=self.COLOR_TEXT).pack(side=tk.LEFT, padx=6)
+        tk.Label(tree_ctrl_frame, text="Vista del Árbol:", font=("Segoe UI", 9, "bold"), bg=self.COLOR_PANEL, fg=self.COLOR_TEXT).pack(side=tk.LEFT, padx=6)
         
-        self.var_modo_arbol = tk.StringVar(value="solucion")
-        rb1 = tk.Radiobutton(tree_ctrl_frame, text="⭐ Solo Camino Solución", variable=self.var_modo_arbol, value="solucion", command=self.on_tree_mode_change, bg=self.COLOR_PANEL, fg=self.COLOR_TEXT, selectcolor=self.COLOR_BG, activebackground=self.COLOR_PANEL, activeforeground=self.COLOR_PATH)
-        rb1.pack(side=tk.LEFT, padx=4)
-        rb2 = tk.Radiobutton(tree_ctrl_frame, text="🌿 Árbol Acotado (Nivel ≤ 4)", variable=self.var_modo_arbol, value="acotado", command=self.on_tree_mode_change, bg=self.COLOR_PANEL, fg=self.COLOR_TEXT, selectcolor=self.COLOR_BG, activebackground=self.COLOR_PANEL, activeforeground=self.COLOR_PATH)
-        rb2.pack(side=tk.LEFT, padx=4)
-        rb3 = tk.Radiobutton(tree_ctrl_frame, text="🌳 Árbol Completo", variable=self.var_modo_arbol, value="completo", command=self.on_tree_mode_change, bg=self.COLOR_PANEL, fg=self.COLOR_TEXT, selectcolor=self.COLOR_BG, activebackground=self.COLOR_PANEL, activeforeground=self.COLOR_PATH)
-        rb3.pack(side=tk.LEFT, padx=4)
+        self.var_modo_arbol = tk.StringVar(value="completo")
+        rb1 = tk.Radiobutton(tree_ctrl_frame, text="🌳 Árbol Completo", variable=self.var_modo_arbol, value="completo", command=self.on_tree_mode_change, bg=self.COLOR_PANEL, fg=self.COLOR_TEXT, selectcolor=self.COLOR_BG, activebackground=self.COLOR_PANEL, activeforeground=self.COLOR_PATH)
+        rb1.pack(side=tk.LEFT, padx=3)
+        rb2 = tk.Radiobutton(tree_ctrl_frame, text="🌿 Acotado (Nivel ≤ 4)", variable=self.var_modo_arbol, value="acotado", command=self.on_tree_mode_change, bg=self.COLOR_PANEL, fg=self.COLOR_TEXT, selectcolor=self.COLOR_BG, activebackground=self.COLOR_PANEL, activeforeground=self.COLOR_PATH)
+        rb2.pack(side=tk.LEFT, padx=3)
+        rb3 = tk.Radiobutton(tree_ctrl_frame, text="⭐ Solo Solución", variable=self.var_modo_arbol, value="solucion", command=self.on_tree_mode_change, bg=self.COLOR_PANEL, fg=self.COLOR_TEXT, selectcolor=self.COLOR_BG, activebackground=self.COLOR_PANEL, activeforeground=self.COLOR_PATH)
+        rb3.pack(side=tk.LEFT, padx=3)
+
+        # Selector de Niveles Visibles en Gráfico (CON ESTILO OSCURO LEGIBLE)
+        tk.Label(tree_ctrl_frame, text="Niveles a Mostrar:", font=("Segoe UI", 9, "bold"), bg=self.COLOR_PANEL, fg=self.COLOR_PATH).pack(side=tk.LEFT, padx=(12, 4))
+        self.var_prof_slider = tk.IntVar(value=8)
+        self.spin_prof = tk.Spinbox(
+            tree_ctrl_frame,
+            from_=1, to=25,
+            textvariable=self.var_prof_slider,
+            width=4,
+            command=self.on_tree_mode_change,
+            bg=self.COLOR_CELL_BG,
+            fg="#38bdf8",
+            buttonbackground=self.COLOR_PANEL,
+            insertbackground="#ffffff",
+            relief=tk.SOLID,
+            bd=1,
+            font=("Segoe UI", 9, "bold")
+        )
+        self.spin_prof.pack(side=tk.LEFT, padx=2)
 
         # Botones Zoom
         btn_zoom_fit = ttk.Button(tree_ctrl_frame, text="⛶ Centrar", style="Secondary.TButton", width=8, command=self.reset_tree_zoom)
@@ -185,55 +231,48 @@ class BusquedasGUI(tk.Tk):
         btn_zoom_in = ttk.Button(tree_ctrl_frame, text="🔍+", style="Secondary.TButton", width=4, command=lambda: self.zoom_tree(1.25))
         btn_zoom_in.pack(side=tk.RIGHT, padx=2)
 
-        # Canvas del Árbol de Búsqueda
-        tree_box = ttk.LabelFrame(right_frame, text=" 🌳 Visualización del Árbol de Búsqueda (Arrastra o haz clic en nodos) ")
-        tree_box.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        # Notebook del Visualizador del Árbol (Gráfico 2D + Jerárquico Texto)
+        self.tree_notebook = ttk.Notebook(right_frame)
+        self.tree_notebook.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
-        self.canvas_tree = tk.Canvas(tree_box, bg="#070b13", highlightthickness=0)
+        # PESTAÑA 1: LIENZO GRÁFICO 2D
+        tab_canvas = tk.Frame(self.tree_notebook, bg=self.COLOR_BG)
+        self.tree_notebook.add(tab_canvas, text="  🎨 Árbol Gráfico 2D  ")
+
+        self.canvas_tree = tk.Canvas(tab_canvas, bg="#070b13", highlightthickness=0)
         self.canvas_tree.pack(fill=tk.BOTH, expand=True, side=tk.LEFT)
 
-        # Scrollbars para el árbol
-        scroll_y = ttk.Scrollbar(tree_box, orient=tk.VERTICAL, command=self.canvas_tree.yview)
+        scroll_y = ttk.Scrollbar(tab_canvas, orient=tk.VERTICAL, command=self.canvas_tree.yview)
         scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
-        scroll_x = ttk.Scrollbar(right_frame, orient=tk.HORIZONTAL, command=self.canvas_tree.xview)
-        scroll_x.pack(fill=tk.X, padx=4)
+        scroll_x = ttk.Scrollbar(tab_canvas, orient=tk.HORIZONTAL, command=self.canvas_tree.xview)
+        scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
 
         self.canvas_tree.configure(xscrollcommand=scroll_x.set, yscrollcommand=scroll_y.set)
 
-        # Bindings para Drag/Pan y Clic en nodos del árbol
         self.canvas_tree.bind("<ButtonPress-1>", self.on_tree_press)
         self.canvas_tree.bind("<B1-Motion>", self.on_tree_drag)
+
+        # PESTAÑA 2: ESTRUCTURA JERÁRQUICA EN TEXTO (FORMATO ÁRBOL)
+        tab_text = tk.Frame(self.tree_notebook, bg=self.COLOR_BG)
+        self.tree_notebook.add(tab_text, text="  📄 Árbol Jerárquico (Texto)  ")
+
+        self.txt_tree = tk.Text(tab_text, bg="#070b13", fg="#38bdf8", font=("Consolas", 10), wrap=tk.NONE, relief=tk.FLAT, padx=10, pady=10)
+        self.txt_tree.pack(fill=tk.BOTH, expand=True, side=tk.LEFT)
+
+        scroll_txt_y = ttk.Scrollbar(tab_text, orient=tk.VERTICAL, command=self.txt_tree.yview)
+        scroll_txt_y.pack(side=tk.RIGHT, fill=tk.Y)
+        scroll_txt_x = ttk.Scrollbar(tab_text, orient=tk.HORIZONTAL, command=self.txt_tree.xview)
+        scroll_txt_x.pack(side=tk.BOTTOM, fill=tk.X)
+
+        self.txt_tree.configure(xscrollcommand=scroll_txt_x.set, yscrollcommand=scroll_txt_y.set)
+
+        self.txt_tree.tag_configure("solucion", foreground="#f59e0b", font=("Consolas", 10, "bold"))
+        self.txt_tree.tag_configure("inicio", foreground="#10b981", font=("Consolas", 10, "bold"))
+        self.txt_tree.tag_configure("accion", foreground="#94a3b8")
 
         # Barra de Inspección de Nodos
         self.node_info_bar = tk.Label(right_frame, text="💡 Pasa el ratón o haz clic en un nodo del árbol para inspeccionar su estado, acción y costo.", font=("Segoe UI", 9), bg=self.COLOR_CELL_BG, fg=self.COLOR_TEXT_MUTED, anchor="w", padx=12, pady=4)
         self.node_info_bar.pack(fill=tk.X, padx=4, pady=2)
-
-        # 3. PANEL INFERIOR: Tabla de Métricas y Complejidad
-        bottom_frame = ttk.LabelFrame(self, text=" 📊 Tabla Comparativa de Complejidades y Métricas Experimentales ")
-        bottom_frame.pack(fill=tk.X, padx=10, pady=6)
-
-        columnas = ("algoritmo", "estructura", "solucion", "costo", "nivel", "generados", "expandidos", "memoria", "tiempo", "comp_t", "comp_e")
-        self.tree_table = ttk.Treeview(bottom_frame, columns=columnas, show="headings", height=4)
-        
-        headers = [
-            ("algoritmo", "Algoritmo", 110),
-            ("estructura", "Estructura de Datos", 140),
-            ("solucion", "Solución", 70),
-            ("costo", "Costo", 60),
-            ("nivel", "Nivel", 60),
-            ("generados", "Generados", 90),
-            ("expandidos", "Expandidos", 90),
-            ("memoria", "Máx. Memoria", 100),
-            ("tiempo", "Tiempo (s)", 90),
-            ("comp_t", "Tiempo Teórico", 100),
-            ("comp_e", "Espacio Teórico", 100)
-        ]
-
-        for col, title, w in headers:
-            self.tree_table.heading(col, text=title)
-            self.tree_table.column(col, width=w, anchor=tk.CENTER)
-
-        self.tree_table.pack(fill=tk.X, expand=True, padx=6, pady=4)
 
     def crear_kpi(self, parent, titulo, valor_def, col):
         f = tk.Frame(parent, bg=self.COLOR_PANEL, padx=8, pady=4)
@@ -255,17 +294,15 @@ class BusquedasGUI(tk.Tk):
         self.reset_animacion()
         self.lbl_coords.config(text=f"Inicio: ({self.inicio[0]}, {self.inicio[1]})  |  Objetivo: ({self.objetivo[0]}, {self.objetivo[1]})")
 
-        # Ejecutar los 4 algoritmos con Tree Search puro
+        # Ejecutar los 4 algoritmos con Tree Search puro (en_ancestros)
         self.inicio, self.resultados = ejecutar_comparacion(estado_inicial=self.inicio, objetivo=self.objetivo)
         self.mejor = mejor_solucion(self.resultados)
 
         self.actualizar_vistas()
 
     def actualizar_vistas(self):
-        # 1. Dibujar Cuadrícula
         self.dibujar_cuadricula()
 
-        # 2. Actualizar KPIs del algoritmo activo
         res = next((r for r in self.resultados if r["algoritmo"] == self.algoritmo_actual), None)
         if res:
             self.lbl_kpi_costo.config(text=f"{res['costo']} pasos" if res["encontrado"] else "--")
@@ -283,10 +320,7 @@ class BusquedasGUI(tk.Tk):
             total_pasos = len(res["camino"]) - 1 if res["camino"] else 0
             self.lbl_paso_info.config(text=f"Paso: 0 / {total_pasos}")
 
-        # 3. Dibujar Árbol de Búsqueda
         self.dibujar_arbol_canvas()
-
-        # 4. Actualizar Tabla Comparativa
         self.actualizar_tabla_resultados()
 
     def on_tab_changed(self, event):
@@ -315,7 +349,6 @@ class BusquedasGUI(tk.Tk):
 
         res = next((r for r in self.resultados if r["algoritmo"] == self.algoritmo_actual), None)
         camino = res["camino"] if (res and res["encontrado"]) else []
-        camino_set = set(camino)
 
         limite_paso = paso_activo if paso_activo is not None else len(camino)
 
@@ -331,7 +364,6 @@ class BusquedasGUI(tk.Tk):
                 txt = f"{r},{c}"
                 txt_color = "#334155"
 
-                # Color según estado
                 if estado == self.inicio:
                     color = self.COLOR_START
                     txt = "I"
@@ -345,7 +377,6 @@ class BusquedasGUI(tk.Tk):
                     txt = "*"
                     txt_color = "#000000"
 
-                # Paso actual animado
                 if paso_activo is not None and paso_activo < len(camino) and camino[paso_activo] == estado:
                     color = self.COLOR_CURRENT
                     txt_color = "#000000"
@@ -425,46 +456,134 @@ class BusquedasGUI(tk.Tk):
             self.pausar_animacion()
 
     # ==========================================================================
-    # RENDERIZADO VISUAL DEL ÁRBOL DE BÚSQUEDA
+    # RENDERIZADO VISUAL DEL ÁRBOL DE BÚSQUEDA (MEJORADO Y ROBUSTO)
     # ==========================================================================
 
     def dibujar_arbol_canvas(self):
         self.canvas_tree.delete("all")
+        self.txt_tree.delete("1.0", tk.END)
+
         res = next((r for r in self.resultados if r["algoritmo"] == self.algoritmo_actual), None)
         if not res:
             return
 
+        camino = res["camino"] if res["encontrado"] else []
+        camino_set = set(camino)
+        acciones = res["acciones"] if res["encontrado"] else []
         raiz = res["raiz"]
-        camino_set = set(res["camino"]) if res["encontrado"] else set()
 
-        if self.algoritmo_actual == "Bidireccional" and isinstance(raiz, tuple):
-            raiz_ini, raiz_obj = raiz
-            self.render_tree_hierarchy(raiz_ini, camino_set, start_x=80, start_y=60, tag_prefix="ini", color="#38bdf8")
-            self.render_tree_hierarchy(raiz_obj, camino_set, start_x=650, start_y=60, tag_prefix="obj", color="#ec4899")
+        # 1. Actualizar Vista de Árbol Jerárquico en Texto
+        self.actualizar_texto_arbol(raiz, camino_set)
+
+        # 2. Actualizar Lienzo Gráfico 2D
+        if self.modo_arbol == "solucion":
+            self.render_solucion_lineal(camino, acciones)
         else:
-            self.render_tree_hierarchy(raiz, camino_set, start_x=120, start_y=60, tag_prefix="root", color="#38bdf8")
+            if self.algoritmo_actual == "Bidireccional" and isinstance(raiz, tuple):
+                raiz_ini, raiz_obj = raiz
+                w1 = self.render_tree_hierarchy(raiz_ini, camino_set, start_x=60, start_y=60, tag_prefix="ini", color="#38bdf8")
+                self.render_tree_hierarchy(raiz_obj, camino_set, start_x=w1 + 100, start_y=60, tag_prefix="obj", color="#ec4899")
+            else:
+                self.render_tree_hierarchy(raiz, camino_set, start_x=100, start_y=60, tag_prefix="root", color="#38bdf8")
 
         self.canvas_tree.config(scrollregion=self.canvas_tree.bbox("all"))
 
-    def render_tree_hierarchy(self, root_node, camino_set, start_x, start_y, tag_prefix, color):
-        if not root_node:
+    def actualizar_texto_arbol(self, raiz, camino_set):
+        """Genera la estructura de árbol jerárquico indentado en la pestaña de texto."""
+        self.txt_tree.delete("1.0", tk.END)
+        if not raiz:
+            self.txt_tree.insert(tk.END, "No hay árbol de búsqueda disponible para este algoritmo.\n")
             return
 
-        # Filtrar o podar según modo
-        max_depth = 4 if self.modo_arbol == "acotado" else 12
-        solo_solucion = (self.modo_arbol == "solucion")
+        if isinstance(raiz, tuple):
+            r_ini, r_obj = raiz
+            self.txt_tree.insert(tk.END, "=== 🌳 ÁRBOL DE BÚSQUEDA DESDE EL INICIO ===\n", "solucion")
+            self._imprimir_nodo_texto(r_ini, "", True, camino_set, [0])
+            self.txt_tree.insert(tk.END, "\n=== 🌳 ÁRBOL DE BÚSQUEDA DESDE EL OBJETIVO ===\n", "solucion")
+            self._imprimir_nodo_texto(r_obj, "", True, camino_set, [0])
+        else:
+            self.txt_tree.insert(tk.END, f"=== 🌳 ÁRBOL DE BÚSQUEDA ({self.algoritmo_actual}) ===\n", "solucion")
+            self._imprimir_nodo_texto(raiz, "", True, camino_set, [0])
 
-        # 1. Asignar coordenadas X, Y a cada nodo
+    def _imprimir_nodo_texto(self, nodo, prefijo, es_ultimo, camino_set, contador, max_nodos=400):
+        if not nodo or contador[0] >= max_nodos:
+            if contador[0] == max_nodos:
+                self.txt_tree.insert(tk.END, f"{prefijo}└── ... [Visualización limitada a {max_nodos} nodos]\n", "accion")
+                contador[0] += 1
+            return
+        contador[0] += 1
+
+        marcador = "└── " if es_ultimo else "├── "
+        accion_str = f"[{nodo.accion}] " if nodo.accion else "[Inicio] "
+        es_sol = nodo.estado in camino_set if camino_set else False
+        sol_tag = " ★ [EN CAMINO SOLUCIÓN]" if es_sol else ""
+
+        linea = f"{prefijo}{marcador}{accion_str}Estado: {nodo.estado} (nivel={nodo.nivel}, costo={nodo.costo}){sol_tag}\n"
+        tag = "solucion" if es_sol else ("inicio" if not nodo.padre else "normal")
+        self.txt_tree.insert(tk.END, linea, tag)
+
+        prefijo_hijos = prefijo + ("    " if es_ultimo else "│   ")
+        for i, hijo in enumerate(nodo.hijos):
+            self._imprimir_nodo_texto(hijo, prefijo_hijos, i == len(nodo.hijos) - 1, camino_set, contador, max_nodos)
+
+    def render_solucion_lineal(self, camino, acciones):
+        """Dibuja la rama de la solución como una secuencia lineal clara y legible."""
+        if not camino:
+            self.canvas_tree.create_text(200, 100, text="No se encontró solución para este punto.", fill=self.COLOR_TEXT_MUTED, font=("Segoe UI", 11))
+            return
+
+        x_center = 260
+        y_step = int(60 * self.zoom_arbol)
+        r = int(16 * self.zoom_arbol)
+        y_cur = 50
+
+        for i, estado in enumerate(camino):
+            es_inicio = (i == 0)
+            es_meta = (i == len(camino) - 1)
+            accion = acciones[i - 1] if i > 0 and i - 1 < len(acciones) else "Inicio (Raíz)"
+
+            # Línea conectora y etiqueta de acción
+            if i > 0:
+                y_prev = y_cur - y_step
+                self.canvas_tree.create_line(x_center, y_prev + r, x_center, y_cur - r, fill="#f59e0b", width=int(3 * self.zoom_arbol), arrow=tk.LAST)
+                self.canvas_tree.create_text(x_center + 65, (y_prev + y_cur) / 2, text=f"[{accion}]", fill="#38bdf8", font=("Consolas", max(7, int(8 * self.zoom_arbol)), "bold"))
+
+            # Nodo
+            fill_c = self.COLOR_START if es_inicio else (self.COLOR_GOAL if es_meta else "#f59e0b")
+            tag_id = f"sol_node_{i}"
+            
+            self.canvas_tree.create_oval(x_center - r, y_cur - r, x_center + r, y_cur + r, fill=fill_c, outline="#ffffff", width=2, tags=tag_id)
+            self.canvas_tree.create_text(x_center, y_cur, text=f"{estado[0]},{estado[1]}", fill="#000000", font=("Segoe UI", max(7, int(8 * self.zoom_arbol)), "bold"), tags=tag_id)
+
+            # Información de Nivel y Costo al lado izquierdo
+            lbl_info = f"Nivel {i} | g(n)={i}"
+            self.canvas_tree.create_text(x_center - 75, y_cur, text=lbl_info, fill=self.COLOR_TEXT_MUTED, font=("Segoe UI", max(7, int(8 * self.zoom_arbol)), "bold"))
+
+            # Clic para inspección
+            item_nodo = type("DummyNodo", (), {"estado": estado, "accion": accion, "nivel": i, "costo": i})()
+            self.canvas_tree.tag_bind(tag_id, "<Button-1>", lambda e, nd=item_nodo: self.inspeccionar_nodo(nd, True))
+
+            y_cur += y_step
+
+    def render_tree_hierarchy(self, root_node, camino_set, start_x, start_y, tag_prefix, color):
+        if not root_node:
+            return start_x + 200
+
+        try:
+            prof_seleccionada = int(self.var_prof_slider.get())
+        except Exception:
+            prof_seleccionada = 8
+
+        max_depth = 4 if self.modo_arbol == "acotado" else prof_seleccionada
+        max_total_nodes = 150 if self.modo_arbol == "acotado" else 1500
+
         nodes_data = []
         links_data = []
         counter = [0]
         cur_x = [start_x]
 
         def layout_node(nodo, depth=0):
-            if not nodo or depth > max_depth:
-                return None
-
-            if solo_solucion and nodo.estado not in camino_set:
+            if not nodo or depth > max_depth or counter[0] >= max_total_nodes:
                 return None
 
             n_id = f"{tag_prefix}_{counter[0]}"
@@ -488,7 +607,7 @@ class BusquedasGUI(tk.Tk):
 
             if not children_objs:
                 item["x"] = cur_x[0]
-                cur_x[0] += int(48 * self.zoom_arbol)
+                cur_x[0] += int(52 * self.zoom_arbol)
             else:
                 first_x = children_objs[0]["x"]
                 last_x = children_objs[-1]["x"]
@@ -500,7 +619,7 @@ class BusquedasGUI(tk.Tk):
         layout_node(root_node, 0)
         node_map = {n["id"]: n for n in nodes_data}
 
-        # 2. Dibujar Enlaces (Líneas)
+        # Dibujar Enlaces
         for s_id, t_id, is_sol in links_data:
             s = node_map.get(s_id)
             t = node_map.get(t_id)
@@ -509,7 +628,7 @@ class BusquedasGUI(tk.Tk):
                 line_width = int(3 * self.zoom_arbol) if is_sol else int(1.5 * self.zoom_arbol)
                 self.canvas_tree.create_line(s["x"], s["y"], t["x"], t["y"], fill=line_color, width=line_width, smooth=True)
 
-        # 3. Dibujar Nodos (Círculos)
+        # Dibujar Nodos
         r = int(14 * self.zoom_arbol)
         for n in nodes_data:
             nodo = n["nodo"]
@@ -524,14 +643,15 @@ class BusquedasGUI(tk.Tk):
             self.canvas_tree.create_oval(x - r, y - r, x + r, y + r, fill=fill_c, outline=outline_c, width=width_c, tags=tag_id)
             self.canvas_tree.create_text(x, y, text=f"{nodo.estado[0]},{nodo.estado[1]}", fill="#000000" if es_sol else "#ffffff", font=("Segoe UI", max(6, int(7 * self.zoom_arbol)), "bold"), tags=tag_id)
 
-            # Binding clic en nodo para inspección
             self.canvas_tree.tag_bind(tag_id, "<Button-1>", lambda e, nd=nodo, sol=es_sol: self.inspeccionar_nodo(nd, sol))
+
+        return cur_x[0]
 
     def inspeccionar_nodo(self, nodo, es_sol):
         tag_sol = " ★ [EN CAMINO SOLUCIÓN]" if es_sol else ""
         accion_str = f"[{nodo.accion}]" if nodo.accion else "[Inicio]"
         self.node_info_bar.config(
-            text=f"🔍 Nodo: ({nodo.estado[0]}, {nodo.estado[1]})  |  Acción: {accion_str}  |  Nivel: {nodo.level if hasattr(nodo, 'level') else nodo.nivel}  |  Costo: {nodo.costo}{tag_sol}",
+            text=f"🔍 Nodo: ({nodo.estado[0]}, {nodo.estado[1]})  |  Acción: {accion_str}  |  Nivel: {nodo.nivel}  |  Costo: {nodo.costo}{tag_sol}",
             fg="#f59e0b" if es_sol else self.COLOR_TEXT
         )
 

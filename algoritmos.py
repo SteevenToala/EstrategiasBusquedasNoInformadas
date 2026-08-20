@@ -10,7 +10,7 @@ from modelo import (
 )
 
 # ==============================================================================
-# ALGORITMOS DE BÚSQUEDA NO INFORMADA
+# ALGORITMOS DE BÚSQUEDA NO INFORMADA (BÚSQUEDA EN ÁRBOL PURA CON EN_ANCESTROS)
 # ==============================================================================
 
 def _empaquetar_resultado(nombre, estructura, comp_tiempo_t, comp_espacio_t,
@@ -49,12 +49,13 @@ def _empaquetar_resultado(nombre, estructura, comp_tiempo_t, comp_espacio_t,
         "nodos_expandidos": nodos_expandidos,
         "max_estructura": max_estructura,
         "tiempo": tiempo,
-        "raiz": raiz
+        "raiz": raiz,
+        "nodo_solucion": nodo
     }
 
 
 def bfs(estado_inicial, objetivo=OBJETIVO):
-    """Búsqueda en Anchura (Breadth-First Search) - Usa Cola FIFO."""
+    """Búsqueda en Anchura (Breadth-First Search) - Búsqueda en Árbol con Cola FIFO."""
     inicio_t = time.perf_counter()
     raiz = Nodo(estado_inicial)
 
@@ -65,7 +66,6 @@ def bfs(estado_inicial, objetivo=OBJETIVO):
         )
 
     frontera = deque([raiz])          # COLA FIFO
-    visitados = {estado_inicial}
     nodos_generados = 1
     nodos_expandidos = 0
     max_frontera = 1
@@ -76,8 +76,8 @@ def bfs(estado_inicial, objetivo=OBJETIVO):
         nodos_expandidos += 1
 
         for accion, estado, costo_paso in funcion_sucesora(nodo.estado):
-            if estado not in visitados:
-                visitados.add(estado)
+            # Control de ciclos por rama activa mediante en_ancestros (Árbol puro)
+            if not nodo.en_ancestros(estado):
                 hijo = Nodo(estado, padre=nodo, accion=accion,
                             costo=nodo.costo + costo_paso, nivel=nodo.nivel + 1)
                 nodo.agregar_hijo(hijo)
@@ -97,7 +97,7 @@ def bfs(estado_inicial, objetivo=OBJETIVO):
 
 
 def dfs(estado_inicial, objetivo=OBJETIVO):
-    """Búsqueda en Profundidad (Depth-First Search) - Usa Pila LIFO."""
+    """Búsqueda en Profundidad (Depth-First Search) - Búsqueda en Árbol con Pila LIFO."""
     inicio_t = time.perf_counter()
     raiz = Nodo(estado_inicial)
 
@@ -108,7 +108,6 @@ def dfs(estado_inicial, objetivo=OBJETIVO):
         )
 
     pila = [raiz]                      # PILA LIFO
-    visitados = {estado_inicial}
     nodos_generados = 1
     nodos_expandidos = 0
     max_pila = 1
@@ -119,8 +118,8 @@ def dfs(estado_inicial, objetivo=OBJETIVO):
         nodos_expandidos += 1
 
         for accion, estado, costo_paso in funcion_sucesora(nodo.estado):
-            if estado not in visitados:
-                visitados.add(estado)
+            # Control de ciclos por rama activa mediante en_ancestros (Árbol puro)
+            if not nodo.en_ancestros(estado):
                 hijo = Nodo(estado, padre=nodo, accion=accion,
                             costo=nodo.costo + costo_paso, nivel=nodo.nivel + 1)
                 nodo.agregar_hijo(hijo)
@@ -140,7 +139,7 @@ def dfs(estado_inicial, objetivo=OBJETIVO):
 
 
 def dfs_iterativa(estado_inicial, objetivo=OBJETIVO):
-    """Búsqueda en Profundidad Iterativa (IDDFS) - Pila con Límite Progresivo."""
+    """Búsqueda en Profundidad Iterativa (IDDFS) - Búsqueda en Árbol con Límite Progresivo."""
     inicio_t = time.perf_counter()
     raiz_principal = Nodo(estado_inicial)
 
@@ -158,7 +157,6 @@ def dfs_iterativa(estado_inicial, objetivo=OBJETIVO):
     while True:
         raiz = Nodo(estado_inicial)
         pila = [raiz]                  # PILA LIFO
-        mejor_nivel = {estado_inicial: 0}
         nodos_generados = 1
         max_pila = 1
         hubo_poda = False
@@ -170,11 +168,10 @@ def dfs_iterativa(estado_inicial, objetivo=OBJETIVO):
 
             if nodo.nivel < limite:
                 for accion, estado, costo_paso in funcion_sucesora(nodo.estado):
-                    nuevo_nivel = nodo.nivel + 1
-                    if estado not in mejor_nivel or nuevo_nivel < mejor_nivel[estado]:
-                        mejor_nivel[estado] = nuevo_nivel
+                    # Control de ciclos por rama activa mediante en_ancestros (Árbol puro)
+                    if not nodo.en_ancestros(estado):
                         hijo = Nodo(estado, padre=nodo, accion=accion,
-                                    costo=nodo.costo + costo_paso, nivel=nuevo_nivel)
+                                    costo=nodo.costo + costo_paso, nivel=nodo.nivel + 1)
                         nodo.agregar_hijo(hijo)
                         nodos_generados += 1
 
@@ -203,20 +200,21 @@ def dfs_iterativa(estado_inicial, objetivo=OBJETIVO):
     )
 
 
-def _expandir_un_paso_bidireccional(frontera_propia, visitados_propios, visitados_opuestos):
-    """Paso unitario de expansión para búsqueda bidireccional."""
+def _expandir_un_paso_bidireccional(frontera_propia, frontera_mapeo_propio, frontera_mapeo_opuesto):
+    """Paso unitario de expansión para búsqueda bidireccional con control de ancestros."""
     nodo = frontera_propia.popleft()
     generados = 0
     for accion, estado, costo_paso in funcion_sucesora(nodo.estado):
-        if estado not in visitados_propios:
+        # Control de ciclos por rama activa mediante en_ancestros (Árbol puro)
+        if not nodo.en_ancestros(estado):
             hijo = Nodo(estado, padre=nodo, accion=accion,
                         costo=nodo.costo + costo_paso, nivel=nodo.nivel + 1)
             nodo.agregar_hijo(hijo)
-            visitados_propios[estado] = hijo
             frontera_propia.append(hijo)
+            frontera_mapeo_propio[estado] = hijo
             generados += 1
-            if estado in visitados_opuestos:
-                return hijo, visitados_opuestos[estado], generados
+            if estado in frontera_mapeo_opuesto:
+                return hijo, frontera_mapeo_opuesto[estado], generados
     return None, None, generados
 
 
@@ -236,8 +234,8 @@ def bidireccional(estado_inicial, objetivo=OBJETIVO):
 
     frontera_ini = deque([raiz_ini])
     frontera_obj = deque([raiz_obj])
-    visitados_ini = {estado_inicial: raiz_ini}
-    visitados_obj = {objetivo: raiz_obj}
+    mapeo_ini = {estado_inicial: raiz_ini}
+    mapeo_obj = {objetivo: raiz_obj}
 
     nodos_generados = 2
     nodos_expandidos = 0
@@ -249,10 +247,10 @@ def bidireccional(estado_inicial, objetivo=OBJETIVO):
         # Se expande el lado con menor frontera
         if len(frontera_ini) <= len(frontera_obj):
             nodo_ini, nodo_obj, generados = _expandir_un_paso_bidireccional(
-                frontera_ini, visitados_ini, visitados_obj)
+                frontera_ini, mapeo_ini, mapeo_obj)
         else:
             nodo_obj, nodo_ini, generados = _expandir_un_paso_bidireccional(
-                frontera_obj, visitados_obj, visitados_ini)
+                frontera_obj, mapeo_obj, mapeo_ini)
 
         nodos_generados += generados
         nodos_expandidos += 1
@@ -283,7 +281,8 @@ def bidireccional(estado_inicial, objetivo=OBJETIVO):
                 "max_estructura": max_estructura,
                 "tiempo": tiempo,
                 "raiz": (raiz_ini, raiz_obj),
-                "encuentro": nodo_ini.estado
+                "encuentro": nodo_ini.estado,
+                "nodo_solucion": (nodo_ini, nodo_obj)
             }
 
     return _empaquetar_resultado(
