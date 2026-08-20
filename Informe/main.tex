@@ -1,0 +1,823 @@
+
+\documentclass{article}
+
+% =========================================================
+% CONFIGURACIÓN GENERAL
+% =========================================================
+
+\usepackage[
+    letterpaper,
+    top=2cm,
+    bottom=5cm,
+    left=3cm,
+    right=3cm,
+    marginparwidth=1.75cm
+]{geometry}
+
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% =========================================================
+% PAQUETES
+% =========================================================
+
+\usepackage{fontawesome5}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{stackengine}
+\usepackage{fancyhdr}
+\usepackage{multicol}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{adjustbox}
+\usepackage{caption}
+\usepackage{xcolor}
+
+% =========================================================
+% REFERENCIAS BIBLIOGRÁFICAS
+% =========================================================
+
+\usepackage[
+    backend=biber,
+    style=ieee,
+    sorting=none
+]{biblatex}
+
+\addbibresource{referencias.bib}
+
+% =========================================================
+% HIPERVÍNCULOS
+% =========================================================
+
+\usepackage[
+    colorlinks=true,
+    allcolors=blue
+]{hyperref}
+
+% =========================================================
+% CONFIGURACIÓN DEL DOCUMENTO
+% =========================================================
+
+\newcommand{\checkedbox}{%
+    \stackinset{c}{0pt}{c}{0pt}{\checkmark}{$\square$}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+
+\setlength{\headheight}{70pt}
+
+% =========================================================
+% ENCABEZADO
+% =========================================================
+
+\fancyhead[C]{%
+    \begin{minipage}[c]{2.5cm}
+        \centering
+        \includegraphics[width=2.2cm]{imagenes/uta.png}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}[c]{8cm}
+        \centering
+        \small{\textbf{UNIVERSIDAD TÉCNICA DE AMBATO}}\\[0.1cm]
+        \scriptsize{\textit{FACULTAD DE INGENIERÍA EN SISTEMAS, ELECTRÓNICA E INDUSTRIAL}}\\[0.1cm]
+        \scriptsize{\textbf{CARRERA DE SOFTWARE}}\\[0.1cm]
+        \scriptsize{\textbf{CICLO ACADÉMICO: JULIO -- DICIEMBRE 2026}}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}[c]{2.5cm}
+        \centering
+        \includegraphics[width=2.2cm]{imagenes/fisei.png}
+    \end{minipage}%
+}
+
+% =========================================================
+% DOCUMENTO
+% =========================================================
+
+\begin{document}
+
+% =========================================================
+% PORTADA
+% =========================================================
+
+\begin{titlepage}
+
+    \thispagestyle{empty}
+
+    \begin{center}
+
+        % -------------------------------------------------
+        % LOGO
+        % -------------------------------------------------
+
+        \vspace*{0.5cm}
+
+        \includegraphics[width=4cm]{imagenes/uta.png}
+
+        \vspace{0.7cm}
+
+        % -------------------------------------------------
+        % UNIVERSIDAD
+        % -------------------------------------------------
+
+        {\Large \textbf{UNIVERSIDAD TÉCNICA DE AMBATO}}
+
+        \vspace{0.35cm}
+
+        {\large
+        FACULTAD DE INGENIERÍA EN SISTEMAS,\\
+        ELECTRÓNICA E INDUSTRIAL}
+
+        \vspace{0.35cm}
+
+        {\large \textbf{CARRERA DE SOFTWARE}}
+
+        
+
+      
+        % -------------------------------------------------
+        % INFORMACIÓN
+        % -------------------------------------------------
+
+        {\large
+        \vspace{1.8cm}
+        \textbf{Tema:}\\
+        ESTRATEGIAS DE BÚSQUEDA NO INFORMADA
+
+        \vspace{0.45cm}
+
+        \textbf{Unidad de Organización Curricular:}\\
+        Profesional
+
+        \vspace{0.45cm}
+
+        \textbf{Nivel y Paralelo:}\\
+        7mo -- A
+
+        \vspace{0.45cm}
+
+        \textbf{Asignatura:}\\
+        Inteligencia Artificial
+
+        \vspace{0.45cm}
+
+        \textbf{Docente:}\\
+        Ing. Mg. Ruben Nogales
+
+        \vspace{0.45cm}
+
+        \textbf{Alumnos participantes:}\\
+        Toala Steeven\\
+        Chavez Michael
+
+        }
+
+        % -------------------------------------------------
+        % PARTE INFERIOR
+        % -------------------------------------------------
+
+        \vfill
+
+        {\large
+        Ambato -- Ecuador\\
+        2026
+        }
+
+    \end{center}
+
+\end{titlepage}
+% =========================================================
+% ÍNDICE
+% =========================================================
+
+\pagenumbering{roman}
+
+\tableofcontents
+
+\newpage
+
+
+
+\pagenumbering{arabic}
+
+% =========================================================
+% 1. DEFINICIÓN DEL PROBLEMA
+% =========================================================
+
+\section{Definición del Problema}
+
+El problema consiste en encontrar un camino desde un estado inicial
+hasta un estado objetivo dentro de un espacio de estados representado
+mediante una cuadrícula. Para resolverlo se implementan diferentes
+estrategias de búsqueda no informada, las cuales exploran el espacio
+sin utilizar información heurística sobre la distancia hacia el
+objetivo \cite{russell2021artificial}.
+
+\subsection{Espacio de Estados}
+
+El espacio de estados se modela como una cuadrícula rectangular de
+20 filas por 10 columnas, donde cada celda representa una posición
+válida del agente dentro del aula. Un estado queda identificado por
+un par ordenado $(fila, columna)$.
+
+\begin{table}[H]
+\centering
+
+\begin{tabular}{|l|p{9cm}|}
+\hline
+\textbf{Parámetro} & \textbf{Valor} \\ \hline
+
+Dimensiones del aula &
+20 filas x 10 columnas \\ \hline
+
+Total de celdas &
+200 \\ \hline
+
+Estado inicial &
+(6, 1) - generado aleatoriamente con semilla 90 \\ \hline
+
+Estado objetivo &
+(11, 8) - definido explícitamente \\ \hline
+
+\end{tabular}
+
+\caption{Características del espacio de estados.}
+
+\end{table}
+
+\subsection{Función Sucesora}
+
+Desde cualquier celda válida el agente puede desplazarse en cuatro
+direcciones: Arriba, Abajo, Derecha e Izquierda, siempre que la celda
+destino se encuentre dentro de los límites de la cuadrícula.
+
+El costo de cada movimiento es uniforme e igual a 1.
+
+\subsection{Clase Nodo}
+
+Cada nodo del árbol de búsqueda almacena los siguientes atributos:
+
+\begin{itemize}
+
+    \item \textbf{Estado:} coordenadas (fila, columna) de la celda.
+
+    \item \textbf{Padre:} referencia al nodo predecesor en el árbol.
+
+    \item \textbf{Acción:} movimiento ejecutado para llegar al nodo
+    desde el padre.
+
+    \item \textbf{Costo:} costo acumulado del camino desde la raíz
+    hasta el nodo.
+
+    \item \textbf{Nivel:} profundidad del nodo dentro del árbol de
+    búsqueda.
+
+    \item \textbf{Hijos:} lista de nodos sucesores generados.
+
+\end{itemize}
+
+% =========================================================
+% 2. ESTRATEGIAS DE BÚSQUEDA
+% =========================================================
+
+\section{Estrategias de Búsqueda Implementadas}
+
+\subsection{Búsqueda por Amplitud (BFS)}
+
+La BFS explora el espacio de estados nivel por nivel. Emplea una
+cola FIFO como estructura dinámica de control.
+
+Está garantizada la optimalidad cuando el costo de cada paso es
+uniforme, pues el primer camino encontrado hacia el objetivo es
+necesariamente el de menor profundidad y, por lo tanto, el de menor
+costo en este escenario \cite{russell2021artificial}.
+
+\subsection{Búsqueda por Profundidad (DFS)}
+
+La DFS explora el espacio profundizando en cada rama antes de
+retroceder. Utiliza una pila LIFO como estructura dinámica de
+control.
+
+No garantiza optimalidad ni completitud en espacios infinitos, pero
+puede encontrar soluciones rápidamente cuando el objetivo se encuentra
+en una rama accesible con rapidez \cite{russell2021artificial}.
+
+\subsection{Búsqueda por Profundidad Iterativa (IDDFS)}
+
+La IDDFS combina las ventajas de la BFS y la DFS.
+
+Ejecuta búsquedas por profundidad limitada con un límite que se
+incrementa desde cero hasta encontrar la solución.
+
+Dado que reinicia la búsqueda en cada iteración, los nodos superiores
+del árbol son reexpandidos múltiples veces, lo que incrementa el total
+de nodos generados y expandidos \cite{russell2021artificial}.
+
+\subsection{Búsqueda Bidireccional}
+
+La búsqueda bidireccional ejecuta de forma simultánea dos búsquedas
+de tipo BFS: una desde el estado inicial hacia el objetivo y otra
+desde el objetivo hacia el estado inicial.
+
+En cada iteración se expande la frontera de menor tamaño. El algoritmo
+termina en cuanto ambas fronteras comparten un nodo en común.
+
+El camino final se construye concatenando el camino desde el inicio
+hasta el punto de encuentro con el camino inverso desde el objetivo
+hasta ese mismo punto \cite{russell2021artificial}.
+
+% =========================================================
+% 3. RESULTADOS OBTENIDOS
+% =========================================================
+
+\section{Resultados Obtenidos}
+
+Se presentan los resultados registrados durante la ejecución del
+programa con semilla 90, estado inicial $(6,1)$ y estado objetivo
+$(11,8)$.
+
+\subsection{Tabla Comparativa de Métricas}
+
+\begin{table}[H]
+\centering
+
+\begin{adjustbox}{width=\textwidth}
+
+\begin{tabular}{|l|c|c|c|r|r|r|c|}
+\hline
+
+\textbf{Algoritmo} &
+\textbf{Solución} &
+\textbf{Costo} &
+\textbf{Nivel} &
+\textbf{Nodos Generados} &
+\textbf{Nodos Expandidos} &
+\textbf{Max. Estructura} &
+\textbf{Tiempo (s)}
+\\ \hline
+
+BFS &
+Sí &
+12 &
+12 &
+128,223 &
+50,074 &
+78,147 &
+0.40011580
+\\ \hline
+
+DFS &
+Sí &
+34 &
+34 &
+75 &
+34 &
+41 &
+0.00033670
+\\ \hline
+
+DFS Iterativa &
+Sí &
+12 &
+12 &
+179,764 &
+179,748 &
+22 &
+0.60379290
+\\ \hline
+
+Bidireccional &
+Sí &
+12 &
+12 &
+861 &
+331 &
+528 &
+0.00304170
+\\ \hline
+
+\end{tabular}
+
+\end{adjustbox}
+
+\caption{Tabla comparativa de métricas de las estrategias de búsqueda.}
+
+\end{table}
+
+\subsection{Caminos Encontrados}
+
+\subsubsection{BFS}
+
+\begin{flushleft}
+\small
+\texttt{
+(6,1) -> (7,1) -> (8,1) -> (9,1) -> (10,1) -> (11,1) ->\\
+(11,2) -> (11,3) -> (11,4) -> (11,5) -> (11,6) ->\\
+(11,7) -> (11,8)
+}
+\end{flushleft}
+
+Longitud: 13 celdas (12 movimientos).
+
+\subsubsection{DFS}
+
+\begin{flushleft}
+\small
+\texttt{
+(6,1) -> (6,0) -> (7,0) -> (7,1) -> (7,2) -> (7,3) ->\\
+(7,4) -> (7,5) -> (7,6) -> (7,7) -> (7,8) -> (7,9) ->\\
+(8,9) -> (8,8) -> (8,7) -> (8,6) -> (8,5) -> (8,4) ->\\
+(8,3) -> (8,2) -> (8,1) -> (8,0) -> (9,0) -> (9,1) ->\\
+(9,2) -> (9,3) -> (9,4) -> (9,5) -> (9,6) -> (9,7) ->\\
+(9,8) -> (9,9) -> (10,9) -> (10,8) -> (11,8)
+}
+\end{flushleft}
+
+Longitud: 35 celdas (34 movimientos).
+
+\subsubsection{DFS Iterativa}
+
+\begin{flushleft}
+\small
+\texttt{
+(6,1) -> (6,2) -> (6,3) -> (6,4) -> (6,5) -> (6,6) ->\\
+(6,7) -> (6,8) -> (7,8) -> (8,8) -> (9,8) -> (10,8) ->\\
+(11,8)
+}
+\end{flushleft}
+
+Longitud: 13 celdas (12 movimientos).
+
+\subsubsection{Bidireccional}
+
+\begin{flushleft}
+\small
+\texttt{
+(6,1) -> (7,1) -> (8,1) -> (9,1) -> (10,1) -> (10,2) ->\\
+(10,3) -> (10,4) -> (10,5) -> (10,6) -> (10,7) ->\\
+(10,8) -> (11,8)
+}
+\end{flushleft}
+
+Longitud: 13 celdas (12 movimientos).
+
+% =========================================================
+% 4. REPRESENTACIÓN VISUAL
+% =========================================================
+
+\subsection{Representación Visual del Espacio de Estados}
+
+La siguiente cuadrícula muestra el camino encontrado por la
+estrategia seleccionada como mejor solución, correspondiente a la
+Búsqueda Bidireccional.
+
+La letra I indica el estado inicial, O el estado objetivo, el asterisco
+(*) las celdas que conforman el camino y el punto (.) las celdas libres
+no transitadas en el camino final.
+
+\begin{verbatim}
+. . . . . . . . . .
+. . . . . . . . . .
+. . . . . . . . . .
+. . . . . . . . . .
+. . . . . . . . . .
+. . . . . . . . . .
+. I . . . . . . . .
+. * . . . . . . . .
+. * . . . . . . . .
+. * . . . . . . . .
+. * * * * * * * * .
+. . . . . . . . O .
+. . . . . . . . . .
+. . . . . . . . . .
+. . . . . . . . . .
+. . . . . . . . . .
+. . . . . . . . . .
+. . . . . . . . . .
+. . . . . . . . . .
+. . . . . . . . . .
+\end{verbatim}
+
+% =========================================================
+% 5. ANÁLISIS DE MEDIDAS
+% =========================================================
+
+\section{Análisis de Medidas de Rendimiento}
+
+\subsection{Completitud}
+
+Todas las estrategias encontraron una solución en esta instancia del
+problema. Sin embargo, desde el punto de vista teórico:
+
+\begin{itemize}
+
+    \item \textbf{BFS:} Completa. Siempre encontrará la solución si
+    existe, dado que el espacio es finito.
+
+    \item \textbf{DFS:} Completa en espacios finitos con control de
+    nodos repetidos, implementado mediante la verificación de
+    ancestros. Sin dicho control podría entrar en ciclos infinitos.
+
+    \item \textbf{DFS Iterativa:} Completa. Hereda la completitud de
+    la BFS al expandir los niveles de forma sistemática.
+
+    \item \textbf{Bidireccional:} Completa en espacios donde tanto
+    el estado inicial como el objetivo son conocidos, condición que
+    se satisface en el problema planteado.
+
+\end{itemize}
+
+\subsection{Optimización (Optimalidad)}
+
+\begin{itemize}
+
+    \item \textbf{BFS:} Óptima en este problema, ya que todos los
+    costos de paso son iguales a 1. Encontró un camino de costo 12.
+
+    \item \textbf{DFS:} No óptima. Encontró un camino de costo 34,
+    significativamente mayor al óptimo de 12. La diferencia representa
+    un incremento del 183\% respecto al costo mínimo.
+
+    \item \textbf{DFS Iterativa:} Óptima. Al explorar nivel por nivel
+    de forma iterativa, garantiza que el primer camino encontrado sea
+    el de menor profundidad. Costo obtenido: 12.
+
+    \item \textbf{Bidireccional:} Óptima en este caso de prueba.
+    Costo obtenido: 12. Cabe señalar que la optimalidad de la búsqueda
+    bidireccional depende de la estrategia de expansión utilizada en
+    cada frente.
+
+\end{itemize}
+
+\subsection{Complejidad en Tiempo}
+
+La complejidad en tiempo se evalúa a través de los nodos generados,
+los nodos expandidos y el tiempo de ejecución registrado.
+
+\begin{table}[H]
+\centering
+
+\begin{tabular}{|l|r|r|c|}
+\hline
+
+\textbf{Algoritmo} &
+\textbf{Nodos Generados} &
+\textbf{Nodos Expandidos} &
+\textbf{Tiempo (s)}
+\\ \hline
+
+BFS &
+128,223 &
+50,074 &
+0.40011580
+\\ \hline
+
+DFS &
+75 &
+34 &
+0.00033670
+\\ \hline
+
+DFS Iterativa &
+179,764 &
+179,748 &
+0.60379290
+\\ \hline
+
+Bidireccional &
+861 &
+331 &
+0.00304170
+\\ \hline
+
+\end{tabular}
+
+\caption{Complejidad temporal observada.}
+
+\end{table}
+
+La DFS es la estrategia que menor tiempo de procesamiento requirió
+(0.00033670 s) y la menor cantidad de nodos generados (75), aunque
+a costa de una solución subóptima.
+
+La DFS Iterativa fue la más costosa en tiempo (0.60379290 s) debido
+al reexpandido de nodos en cada iteración.
+
+La Búsqueda Bidireccional logra el mejor equilibrio entre optimalidad
+y eficiencia temporal, con solo 331 nodos expandidos y un tiempo de
+ejecución de 0.00304170 s, siendo la mejor solución dentro de las
+estrategias óptimas.
+
+Desde el punto de vista asintótico, en un grafo de factor de
+ramificación $b$ y profundidad de la solución $d$:
+
+\begin{itemize}
+
+    \item \textbf{BFS:} $O(b^d)$ en tiempo.
+
+    \item \textbf{DFS:} $O(bm)$ en tiempo, donde $m$ es la profundidad
+    máxima del árbol.
+
+    \item \textbf{DFS Iterativa:} $O(b^d)$ en tiempo, con una
+    constante mayor por las reexpansiones.
+
+    \item \textbf{Bidireccional:} $O(b^{d/2})$ en tiempo, lo que
+    explica su ventaja práctica.
+
+\end{itemize}
+
+\subsection{Complejidad en Espacio}
+
+La complejidad en espacio se evalúa mediante el tamaño máximo que
+alcanzó la estructura dinámica de control durante la ejecución.
+
+\begin{table}[H]
+\centering
+
+\begin{tabular}{|l|r|}
+\hline
+
+\textbf{Algoritmo} &
+\textbf{Máx. Estructura}
+\\ \hline
+
+BFS &
+78,147 nodos
+\\ \hline
+
+DFS &
+41 nodos
+\\ \hline
+
+DFS Iterativa &
+22 nodos
+\\ \hline
+
+Bidireccional &
+528 nodos
+\\ \hline
+
+\end{tabular}
+
+\caption{Complejidad espacial observada.}
+
+\end{table}
+
+La DFS Iterativa registra el menor uso de espacio en la estructura
+de control (22 nodos), seguida de la DFS (41 nodos).
+
+Este resultado confirma la propiedad teórica de la IDDFS: logra
+optimalidad con consumo de memoria equivalente al de la DFS.
+
+La BFS demanda el mayor espacio de la estructura (78,147 nodos),
+ya que mantiene en memoria todos los nodos necesarios de la frontera
+de búsqueda.
+
+% =========================================================
+% 6. IDENTIFICACIÓN DE LA MEJOR SOLUCIÓN
+% =========================================================
+
+\section{Identificación de la Mejor Solución}
+
+La Búsqueda Bidireccional fue seleccionada como la mejor solución con
+los siguientes argumentos:
+
+\begin{enumerate}
+
+    \item \textbf{Costo óptimo:} Costo 12, igual al mínimo encontrado
+    por BFS y DFS Iterativa.
+
+    \item \textbf{Menor tiempo entre las óptimas:} 0.00304170 s,
+    frente a 0.40011580 s de BFS y 0.60379290 s de DFS Iterativa.
+
+    \item \textbf{Eficiencia en expansión:} Solo requirió expandir
+    331 nodos para encontrar la solución óptima, en contraste con
+    los 50,074 de BFS y los 179,748 de DFS Iterativa.
+
+\end{enumerate}
+
+Los resultados obtenidos son consistentes con las propiedades
+teóricas de cada estrategia.
+
+La DFS demuestra ser la más rápida en términos absolutos de tiempo
+de cómputo, pero su solución es marcadamente subóptima, con un costo
+34 versus el óptimo de 12.
+
+Esto se debe a que la DFS no garantiza encontrar el camino más corto,
+sino que sigue la primera rama disponible hasta encontrar el objetivo
+o agotar las posibilidades.
+
+La BFS garantiza la optimalidad, pero a un alto costo en tiempo y,
+especialmente, en espacio.
+
+El elevado número de nodos generados (128,223) y el tamaño máximo de
+la frontera (78,147 nodos) indican que la BFS puede volverse
+impracticable en espacios de estados más grandes.
+
+La DFS Iterativa es la estrategia que mejor compromiso ofrece entre
+optimalidad y uso de memoria, siendo preferible cuando el espacio de
+memoria es un recurso crítico.
+
+Sin embargo, el reexpandido repetido de nodos eleva considerablemente
+el tiempo de cómputo.
+
+La Búsqueda Bidireccional demuestra ser la estrategia más eficiente
+en este problema concreto, al reducir drásticamente el espacio de
+búsqueda al explorar simultáneamente desde ambos extremos.
+
+% =========================================================
+% 7. CONTROL DE NODOS REPETIDOS
+% =========================================================
+
+\section{Control de Nodos Repetidos}
+
+El control de nodos repetidos se implementó en todas las estrategias
+mediante el método \texttt{en\_ancestros}, que verifica si un estado
+ya se encuentra en la cadena de ancestros del nodo actual antes de
+expandirlo.
+
+Este mecanismo evita ciclos infinitos y garantiza que el árbol de
+búsqueda no expanda estados ya visitados en la rama activa.
+
+Es importante destacar que este control opera por rama, y no de forma
+global mediante un conjunto de visitados, lo que permite que el árbol
+de búsqueda sea genuinamente un árbol sin nodos compartidos entre
+ramas distintas.
+
+% =========================================================
+% 8. ESTRUCTURA DEL ÁRBOL
+% =========================================================
+
+\section{Estructura del Árbol de Búsqueda}
+
+El árbol de búsqueda es generado de forma dinámica a medida que el
+algoritmo expande nodos.
+
+Cada nodo mantiene referencias explícitas a su padre y a sus hijos,
+lo que permite reconstruir el camino solución mediante el método
+\texttt{camino()}, que sigue la cadena de padres hasta la raíz.
+
+El programa incluye una función de visualización del árbol con un
+límite configurable de nodos mostrados para evitar desbordamientos
+en árboles de gran tamaño.
+
+% =========================================================
+% 9. CONCLUSIÓN
+% =========================================================
+
+\section{Conclusión}
+
+La implementación de las cuatro estrategias de búsqueda no informada
+sobre el problema de navegación en cuadrícula permitió verificar
+empíricamente sus propiedades teóricas en cuanto a completitud,
+optimalidad, complejidad en tiempo y complejidad en espacio.
+
+La Búsqueda Bidireccional se consolida como la estrategia de mejor
+rendimiento global para este problema, al combinar optimalidad con
+eficiencia en tiempo y un uso moderado de memoria.
+
+La DFS resulta adecuada cuando el tiempo de cómputo es el recurso
+crítico y la optimalidad no es un requisito.
+
+La DFS Iterativa es la opción preferente cuando la memoria es limitada
+y se requiere optimalidad.
+
+La BFS constituye la referencia teórica de completitud y optimalidad,
+aunque su demanda de memoria la hace menos práctica en problemas de
+mayor escala.
+
+El ejercicio realizado ilustra cómo la selección de la estrategia de
+búsqueda adecuada depende de las restricciones del problema y de los
+recursos computacionales disponibles.
+
+Asimismo, el modelado correcto del problema, incluyendo el estado
+inicial, función sucesora, test objetivo, costo del camino y estructura
+del nodo, constituye un paso previo indispensable para cualquier
+proceso de búsqueda \cite{russell2021artificial}.
+
+% =========================================================
+% REFERENCIAS BIBLIOGRÁFICAS
+% =========================================================
+
+\newpage
+
+% Fuerza la aparición de las referencias que no fueron
+% citadas directamente dentro del texto.
+\nocite{nilsson1998artificial}
+\nocite{poole2010computational}
+
+\printbibliography[
+    heading=bibintoc,
+    title={Referencias Bibliográficas}
+]
+
+% =========================================================
+% FIN DEL DOCUMENTO
+% =========================================================
+
+\end{document}
+
